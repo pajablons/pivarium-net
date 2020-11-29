@@ -1,7 +1,9 @@
 import Adafruit_DHT
+import threading
 
-class Extension:
+class Extension(threading.Thread):
     def __init__(self, extension_id, text_id, prot, address):
+        super(Extension, self).__init__()
         self.ext_id = extension_id
         self.name = text_id
         self.protocol = self.validate_protocol(prot)
@@ -16,9 +18,11 @@ class Extension:
         return valid.get(prot)
 
 class Sensor(Extension):
-    def __init__(self, extension_id, text_id, prot, address, s_type):
+    def __init__(self, extension_id, text_id, prot, address, s_type, killEvent, rEvent):
         super(Sensor, self).__init__(extension_id, text_id, prot, address)
         self.sensor_type, self.sensor_reader = self._validate_sensor_type(s_type)
+        self.readEvent = rEvent
+        self.shutdownEvent = killEvent
 
     def _validate_sensor_type(self, s_type):
         valid = {
@@ -28,6 +32,12 @@ class Sensor(Extension):
         if s_type not in valid:
             raise ValueError("Illegal sensor type.  Sensor must be one of: %r." % valid.keys())
         return s_type, valid[s_type]
+
+    def run(self):
+        while not self.shutdownEvent.isSet():
+            if self.readEvent.wait(15):
+                print(self.read_sensor())
+                self.readEvent.clear()
 
     def _read_humidity(self):
         humidity = Adafruit_DHT.read_retry(self.protocol, self.gpio_address)[0]
