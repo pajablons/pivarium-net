@@ -18,8 +18,9 @@ class Extension(threading.Thread):
         return valid.get(prot)
 
 class Sensor(Extension):
-    def __init__(self, extension_id, text_id, prot, address, s_type, killEvent, rEvent):
+    def __init__(self, extension_id, text_id, prot, address, s_type, killEvent, rEvent, manager):
         super(Sensor, self).__init__(extension_id, text_id, prot, address)
+        self.manager = manager
         self.sensor_type, self.sensor_reader = self._validate_sensor_type(s_type)
         self.readEvent = rEvent
         self.shutdownEvent = killEvent
@@ -36,7 +37,9 @@ class Sensor(Extension):
     def run(self):
         while not self.shutdownEvent.isSet():
             if self.readEvent.wait(15):
-                print(self.read_sensor())
+                result = self. read_sensor()
+                print(result)
+                self.manager.registerReadResult((self.ext_id, result))
                 self.readEvent.clear()
 
     def _read_humidity(self):

@@ -1,12 +1,14 @@
 import Adafruit_DHT
 import configparser
 import threading
+import queue
 
 import extensions
 
 class SensorManager:
     def __init__(self, config_sensors):
         self.shutdownEvent = threading.Event()
+        self.senseResultQueue = queue.SimpleQueue()
         self.sensor_dict, self.reader_event_dict = self._load_sensors(config_sensors)
     
     def _load_sensors(self, config_sensors):
@@ -22,7 +24,8 @@ class SensorManager:
                 address = config_sensors[section]["GPIO_Address"], 
                 s_type = config_sensors[section]["Type"],
                 killEvent = self.shutdownEvent,
-                rEvent = reader_event_dict[sensor_name]
+                rEvent = reader_event_dict[sensor_name],
+                manager = self
             )
             sensor_dict[sensor_name] = sensor
             sensor.start()
@@ -33,11 +36,17 @@ class SensorManager:
 #        value = sensor.read_sensor()
 #        return '{}: {}'.format(sensor.name, value)
 
+    def registerReadResult(self, sensorResult):
+        self.senseResultQueue.put(sensorResult)
+
+    def requestNextResult(self):
+        return self.senseResultQueue.get()
+
     def shutdown_sensors(self):
         self.shutdownEvent.set()
 
     def read_sensor_by_name(self, name):
-        return self._poll_sensor(self.sensor_dict[name])
+        self._poll_sensor(self.sensor_dict[name])
 
     def get_sensor_names(self):
         return self.sensor_dict.keys()
