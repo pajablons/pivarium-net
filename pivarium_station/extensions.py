@@ -1,4 +1,5 @@
 import Adafruit_DHT
+import sensor
 import threading
 
 class Extension(threading.Thread):
@@ -6,12 +7,22 @@ class Extension(threading.Thread):
         super(Extension, self).__init__()
         self.ext_id = extension_id
         self.name = text_id
-        self.protocol = self.validate_protocol(prot)
         self.gpio_address = address
+        self.protocol = self.validate_protocol(prot)
+        self.instance = self.generate_instance(self.protocol)
+
+    def generate_instance(self, prot):
+        if prot is Adafruit_DHT.DHT22:
+            return None
+        elif prot is sensor.SHT20:
+            return sensor.SHT20(1, int(self.gpio_address, 16))
+        else:
+            return None
 
     def validate_protocol(self, prot):
         valid = {
-            'DHT22': Adafruit_DHT.DHT22
+            'DHT22': Adafruit_DHT.DHT22,
+            'SHT20': sensor.SHT20
         }
         if prot not in valid:
             raise ValueError("Illegal protocol id.  Connection protocol must be in: %r." % valid.keys())
@@ -27,36 +38,35 @@ class Sensor(Extension):
 
     def _validate_sensor_type(self, s_type):
         valid = {
-            "Humidity": self._read_humidity,
-            "Temperature": self._read_temp
+            "Humidity": self._sense_select_humidity,
+            "Temperature": self._sense_select_temp
         }
         if s_type not in valid:
             raise ValueError("Illegal sensor type.  Sensor must be one of: %r." % valid.keys())
-        return s_type, valid[s_type]
+        return s_type, valid[s_type]()
 
     def run(self):
         while not self.shutdownEvent.isSet():
-            if self.readEvent.wait(15):
-                result = self. read_sensor()
-                print(result)
+            if self.readEvent.wait(5):
+                result = self.read_sensor()
                 self.manager.registerReadResult((self.ext_id, result))
                 self.readEvent.clear()
 
-    def _read_humidity(self):
-        humidity = Adafruit_DHT.read_retry(self.protocol, self.gpio_address)[0]
+    def _sense_select_humidity(self):
+        processors = {
+            sensor.SHT20: lambda: self.instance.humidity(),
+            Adafruit_DHT.DHT22: lambda: Adafruit_DHT.read_retry(self.protocol, self.gpio_address)[0]
+        }
 
-        if humidity is not None:
-            return humidity
-        else:
-            return -1
+        return processors[self.protocol]
 
-    def _read_temp(self):
-        temp = Adafruit_DHT.read_retry(self.protocol, self.gpio_address)[1]
+    def _sense_select_temp(self):
+        processors = {
+            sensor.SHT20: lambda: self.instance.temperature(),
+            Adafruit_DHT.DHT22: lambda: Adafruit_DHT.read_retry(self.protocol, self.gpio_address)[1]
+        }
         
-        if temp is not None:
-            return temp
-        else:
-            return -1
+        return processors[self.protocol]
 
     def read_sensor(self):
         return self.sensor_reader()
