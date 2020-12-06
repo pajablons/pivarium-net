@@ -10,6 +10,7 @@ class Extension(threading.Thread):
         self.gpio_address = address
         self.protocol = self.validate_protocol(prot)
         self.instance = self.generate_instance(self.protocol)
+        print("Sensor created: ID {}, Name {}".format(self.ext_id, self.name))
 
     def generate_instance(self, prot):
         if prot is Adafruit_DHT.DHT22:
