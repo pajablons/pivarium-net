@@ -57,10 +57,6 @@ class Connection:
 
         self._inQueue = queue.SimpleQueue()
         self._outQueue = queue.SimpleQueue()
-       #This seems really stupid, I feel like the processing should happen in this same thread (asking the sensormanager to issue requests and requesting back the results), but then we lose encapsulation and 
-
-       #New idea: Every time a received message is popped off the queue, dynamically create a new thread to handle that message, and only that message.  
-       #That thread interprets the message, and requests a sense or switch.  It does NOT wait for the results of said switch or sense-- A single thread can handle ALL sending.... likely the Main thread
 
     def initiate_connection(self, address, port):
         self._remoteaddr = address

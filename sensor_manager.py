@@ -33,8 +33,6 @@ class SensorManager:
 
     def _poll_sensor(self, sensor):
         self.reader_event_dict[sensor.ext_id].set()
-#        value = sensor.read_sensor()
-#        return '{}: {}'.format(sensor.name, value)
 
     def registerReadResult(self, sensorResult):
         self.senseResultQueue.put(sensorResult)
