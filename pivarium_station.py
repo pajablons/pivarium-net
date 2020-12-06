@@ -28,11 +28,12 @@ class _Worker(threading.Thread):
 class RoutingManager:
     _WORKER_COUNT = 25
 
-    def __init__(self, sensor_mngr):
+    def __init__(self, sensor_mngr, sname):
         self._inQueue = queue.SimpleQueue()
         self._outQueue = queue.SimpleQueue()
         self.connections = {}
         self.sensor_mngr = sensor_mngr
+        self.sname = sname
 
         self._workerLock = threading.Lock()        
         self._workerpool = set()
@@ -51,6 +52,7 @@ class RoutingManager:
         while True:
             connID, data = self._inQueue.get()
             msgSplit = data.split(maxsplit = 1)
+            print("Data: {}".format(data))
             reqKey = msgSplit[0]
             self._task_worker(requestKeys[reqKey], msgSplit[1])
 
@@ -71,7 +73,7 @@ class RoutingManager:
                 self._workerpool.add(newWorker)
 
     def send(self, cid, msg):
-        self._outQueue.put((cid, msg))
+        self._outQueue.put((cid, "{} {}".format(self.sname, msg)))
 
     def avail_worker(self, worker):
         with self._workerLock:
@@ -124,7 +126,7 @@ def establishHubConnection(port):
 config_station, config_sensors = load_cfg('settings_station.cfg')
 
 sensor_manager = sensor_manager.SensorManager(config_sensors)
-route_manager = RoutingManager(sensor_manager)
+route_manager = RoutingManager(sensor_manager, config_station['GLOBAL']['Station_Name'])
 
 hubConn = establishHubConnection(int(config_station['NETWORK']['Bind_Port']))
 route_manager.add_connection(hubConn)

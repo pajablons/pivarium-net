@@ -66,8 +66,8 @@ class Connection:
         sock.connect((address, port))
 
         self._conn = sock
-        self._sockReader = _Reader(self.conn, self.remoteaddr, self, self._inQueue)
-        self._sockWriter = _Writer(self.conn, self.remoteaddr, self, self._outQueue)
+        self._sockReader = _Reader(self._conn, self._remoteaddr, self, self._inQueue)
+        self._sockWriter = _Writer(self._conn, self._remoteaddr, self, self._outQueue)
 
         self._sockReader.start()
         self._sockWriter.start()
