@@ -15,24 +15,24 @@ class SensorManager:
         sensor_dict = {}
         reader_event_dict = {}
         for section in config_sensors.sections():
-            sensor_name = config_sensors[section]["Name"]
-            reader_event_dict[sensor_name] = threading.Event()
+            ext_id = config_sensors[section]["Sensor_ID"]
+            reader_event_dict[ext_id] = threading.Event()
             sensor = extensions.Sensor(
-                extension_id = config_sensors[section]["Sensor_ID"], 
-                text_id = sensor_name, 
+                extension_id = ext_id,
+                text_id = config_sensors[section]["Name"], 
                 prot = config_sensors[section]["Connection"], 
                 address = config_sensors[section]["GPIO_Address"], 
                 s_type = config_sensors[section]["Type"],
                 killEvent = self.shutdownEvent,
-                rEvent = reader_event_dict[sensor_name],
+                rEvent = reader_event_dict[ext_id],
                 manager = self
             )
-            sensor_dict[sensor_name] = sensor
+            sensor_dict[ext_id] = sensor
             sensor.start()
         return sensor_dict, reader_event_dict
 
     def _poll_sensor(self, sensor):
-        self.reader_event_dict[sensor.name].set()
+        self.reader_event_dict[sensor.ext_id].set()
 #        value = sensor.read_sensor()
 #        return '{}: {}'.format(sensor.name, value)
 
@@ -45,8 +45,8 @@ class SensorManager:
     def shutdown_sensors(self):
         self.shutdownEvent.set()
 
-    def read_sensor_by_name(self, name):
-        self._poll_sensor(self.sensor_dict[name])
+    def read_sensor_by_id(self, ident):
+        self._poll_sensor(self.sensor_dict[ident])
 
     def get_sensor_names(self):
         return self.sensor_dict.keys()
