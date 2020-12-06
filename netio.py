@@ -66,6 +66,9 @@ def Connection:
         self.conn = sock
         self.sockReader = _Reader(self.conn, self.remoteaddr, self, self.inQueue)
         self.sockWriter = _Writer(self.conn, self.remoteaddr, self, self.outQueue)
+
+        self.sockReader.start()
+        self.sockWriter.start()
         
     def receive(self, port):
         self.port = port
@@ -78,3 +81,6 @@ def Connection:
         
         self.sockReader = _Reader(self.conn, self.remoteaddr, self, self.inQueue)
         self.sockWriter = _Writer(self.conn, self.remoteaddr, self, self.outQueue)
+
+        self.sockReader.start()
+        self.sockWriter.start()
