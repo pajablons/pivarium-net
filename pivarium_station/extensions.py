@@ -16,13 +16,16 @@ class Extension(threading.Thread):
             return None
         elif prot is sensor.SHT20:
             return sensor.SHT20(1, int(self.gpio_address, 16))
+        elif prot is sensor.DS18B20:
+            return sensor.DS18B20(self.gpio_address)
         else:
             return None
 
     def validate_protocol(self, prot):
         valid = {
             'DHT22': Adafruit_DHT.DHT22,
-            'SHT20': sensor.SHT20
+            'SHT20': sensor.SHT20,
+            'DS18B20': sensor.DS18B20
         }
         if prot not in valid:
             raise ValueError("Illegal protocol id.  Connection protocol must be in: %r." % valid.keys())
@@ -62,7 +65,8 @@ class Sensor(Extension):
 
     def _sense_select_temp(self):
         processors = {
-            sensor.SHT20: lambda: self.instance.temperature(),
+            sensor.SHT20: lambda: self.instance.temperature().C,
+            sensor.DS18B20: lambda: self.instance.temperature().C,
             Adafruit_DHT.DHT22: lambda: Adafruit_DHT.read_retry(self.protocol, self.gpio_address)[1]
         }
         
