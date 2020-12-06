@@ -1,7 +1,5 @@
 # pivarium-net
 
 Dependencies:
-- Gunicorn
-- Django
-- sht20
+- sensor
 - smbus2
