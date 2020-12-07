@@ -4,6 +4,8 @@ import queue
 
 #TODO: message delimiters
 
+DELIMITER = '\r'
+
 class _ConnIO(threading.Thread):
     def __init__(self, netsock, addr, manager, msgQ):
         super(_ConnIO, self).__init__()
@@ -29,17 +31,24 @@ class _Reader(_ConnIO):
         return self.iosock.recv(length).decode('ascii')
 
     def run(self):
+        cache = ''
         #TODO: "is-alive"
         while True:
-            msg = self.readMsg()
-            self._enqueue(msg)
+            msg = "{}{}".format(cache, self.readMsg())
+            cache = ''
+            msgSplit = msg.split('\r')
+            for x in range(0, len(msgSplit) - 1):
+                self._enqueue(msgSplit[x])
+            if not msg.endswith('\r'):
+                cache = msgSplit[len(msgSplit) - 1]
 
 class _Writer(_ConnIO):
     def __init__(self, netsock, addr, manager, msgQ):
         super(_Writer, self).__init__(netsock, addr, manager, msgQ)
 
     def sendMsg(self, data):
-        self._enqueue(data.encode('ascii'))
+        print("Writing: {}".format(data))
+        self._enqueue("{}\r".format(data).encode('ascii'))
 
     def run(self):
         #TODO: "is-alive"

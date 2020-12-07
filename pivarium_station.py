@@ -118,17 +118,35 @@ def load_cfg(cfg_file_name):
 
     return config_station, config_sensors
 
-def establishHubConnection(port):
+def establishHubConnection(port, introduction):
     hubConn = netio.Connection(0)
     hubConn.receive_connection(port)
+    hubConn.write(introduction)
     return hubConn
+
+def generateIntro(config_station, config_sensors):
+    intro = 'name:{}'.format(config_station['GLOBAL']['Station_Name'])
+
+    for sensor in config_sensors.sections():
+        sname = config_sensors[sensor]['Name']
+        stype = config_sensors[sensor]['Type']
+        sid   = config_sensors[sensor]['Sensor_ID']
+
+        stext = 'sname:{}|stype:{}|sid:{}'.format(sname, stype, sid)
+
+        intro = '{}\n{}'.format(intro, stext)
+
+    return intro
 
 config_station, config_sensors = load_cfg('settings_station.cfg')
 
 sensor_manager = sensor_manager.SensorManager(config_sensors)
 route_manager = RoutingManager(sensor_manager, config_station['GLOBAL']['Station_Name'])
 
-hubConn = establishHubConnection(int(config_station['NETWORK']['Bind_Port']))
+hubConn = establishHubConnection(
+    int(config_station['NETWORK']['Bind_Port']),
+    generateIntro(config_station, config_sensors)
+)
 route_manager.add_connection(hubConn)
 route_manager.startRouting()
 
